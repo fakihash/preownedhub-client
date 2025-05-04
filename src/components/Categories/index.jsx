@@ -41,12 +41,11 @@ const Categories = () => {
   const navigate = useNavigate();
 
   const handleCategoryClick = (category) => {
-    // navigate(`/products?category=${category.toLowerCase()}`);
-    navigate(`/products`);
+    navigate(`/products?category=${encodeURIComponent(category)}`);
   };
 
   return (
-    <div>
+    <div className="">
       <Menu placement="bottom-start">
         <MenuHandler>
           <Button

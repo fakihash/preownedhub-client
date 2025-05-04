@@ -5,34 +5,106 @@ import {
   Typography,
   Radio,
   Button,
+  Textarea,
+  Input,
 } from "@material-tailwind/react";
+import { useLocation, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { useSelector } from "react-redux";
 
 const PaymentMethods = () => {
+  const { state } = useLocation();
+  const { userId, productId, price } = state;
+  const navigate = useNavigate();
   const [selectedMethod, setSelectedMethod] = useState("");
+  const userData = useSelector((state) => state?.auth);
+  const [billingName, setBillingName] = useState("");
+  const [billingEmail, setBillingEmail] = useState("");
+  const [billingAddress, setBillingAddress] = useState("");
 
   const handleSelect = (value) => {
     setSelectedMethod(value);
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!selectedMethod) {
       alert("Please select a payment method.");
       return;
     }
-    // Handle redirect or process step
-    console.log("Selected Payment Method:", selectedMethod);
-    alert(`You selected ${selectedMethod} payment.`);
+
+    if (selectedMethod === "cash") {
+      if (!billingName || !billingEmail || !billingAddress) {
+        alert("Please fill all required billing information.");
+        return;
+      }
+    }
+
+    try {
+      let body;
+      if (selectedMethod === "stripe") {
+        body = {
+          user: userId,
+          products: [{ product: productId, quantity: 1 }],
+          totalAmount: price,
+          paymentMethod: selectedMethod,
+        };
+      } else {
+        body = {
+          user: userId,
+          products: [{ product: productId, quantity: 1 }],
+          totalAmount: price,
+          paymentMethod: selectedMethod,
+          billingInfo: {
+            name: billingName,
+            email: billingEmail,
+            address: billingAddress,
+          },
+        };
+      }
+      const response = await axios.post(
+        "http://localhost:4000/api/order/create",
+        body,
+        {
+          headers: {
+            Authorization: `Bearer ${userData?.token}`,
+          },
+        }
+      );
+
+      const order = response.data;
+
+      console.log(order, "order response before stripe");
+
+      if (selectedMethod === "stripe") {
+        const stripeSession = await axios.post(
+          "http://localhost:4000/api/order/stripe/create-session",
+          {
+            orderId: order._id,
+          }
+        );
+        window.location.href = stripeSession.data.url;
+      } else {
+        if (selectedMethod === "cash") {
+          alert("Your order has been placed with Cash on Delivery!");
+          // navigate("/payment-success?orderId=" + response.data._id);
+          navigate("/");
+        }
+      }
+    } catch (error) {
+      console.error("Order creation failed", error);
+      alert("Something went wrong.");
+    }
   };
 
   const methods = [
-    {
-      label: "PayPal",
-      value: "paypal",
-      description: "Fast and secure checkout using your PayPal account.",
-    },
+    // {
+    //   label: "PayPal",
+    //   value: "paypal",
+    //   description: "Fast and secure checkout using your PayPal account.",
+    // },
     {
       label: "Debit/Credit Card",
-      value: "card",
+      value: "stripe",
       description: "Pay using your Visa, MasterCard, or other cards.",
     },
     {
@@ -76,6 +148,39 @@ const PaymentMethods = () => {
             </CardBody>
           </Card>
         ))}
+      </div>
+
+      <div className="p-4 flex bg-white rounded-xl">
+        {selectedMethod === "cash" && (
+          <div className="space-y-6 mt-6 w-full">
+            <Typography variant="h4">Billing Information</Typography>
+            <div className="w-full">
+              <Input
+                label="Full Name"
+                value={billingName}
+                onChange={(e) => setBillingName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="w-full">
+              <Input
+                label="Email Address"
+                type="email"
+                value={billingEmail}
+                onChange={(e) => setBillingEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className="w-full">
+              <Textarea
+                label="Billing / Delivery Address"
+                value={billingAddress}
+                onChange={(e) => setBillingAddress(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="mt-6">
