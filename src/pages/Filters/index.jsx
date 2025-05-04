@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Button,
   Input,
@@ -9,51 +9,51 @@ import {
   CardBody,
 } from "@material-tailwind/react";
 import { ProductCard } from "../../components";
-
-const products = [
-  {
-    title: "Smartphone",
-    price: 199,
-    category: "electronics",
-    brand: "Samsung",
-    image: "https://via.placeholder.com/300x200",
-  },
-  {
-    title: "T-Shirt",
-    price: 25,
-    category: "clothes",
-    brand: "Nike",
-    image: "https://via.placeholder.com/300x200",
-  },
-  {
-    title: "Laptop",
-    price: 899,
-    category: "electronics",
-    brand: "Dell",
-    image: "https://via.placeholder.com/300x200",
-  },
-  {
-    title: "Novel Book",
-    price: 15,
-    category: "books",
-    brand: "Penguin",
-    image: "https://via.placeholder.com/300x200",
-  },
-  {
-    title: "Jeans",
-    price: 55,
-    category: "clothes",
-    brand: "Levi's",
-    image: "https://via.placeholder.com/300x200",
-  },
-];
+import { useLocation } from "react-router-dom";
+import axios from "axios";
 
 const Filters = () => {
-  const [selectedFilters, setSelectedFilters] = useState({
-    category: "",
-    priceRange: "",
-    brand: "",
-  });
+  const location = useLocation();
+
+  const getInitialFilters = () => {
+    const params = new URLSearchParams(location.search);
+    return {
+      category: params.get("category") || params.get("search") || "",
+      priceRange: "",
+      brand: "",
+      condition: "",
+      name: params.get("search") || "",
+    };
+  };
+
+  const [selectedFilters, setSelectedFilters] = useState(getInitialFilters());
+  const [products, setProducts] = useState([]);
+
+  useEffect(() => {
+    const fetchFilteredProducts = async () => {
+      const params = {};
+
+      if (selectedFilters.category) params.category = selectedFilters.category;
+      if (selectedFilters.brand) params.brand = selectedFilters.brand;
+      if (selectedFilters.name) params.name = selectedFilters.name;
+      if (selectedFilters.condition)
+        params.condition = selectedFilters.condition;
+      if (selectedFilters.minPrice) params.minPrice = selectedFilters.minPrice;
+      if (selectedFilters.maxPrice) params.maxPrice = selectedFilters.maxPrice;
+
+      try {
+        const res = await axios.get(
+          "http://localhost:4000/api/product/filter",
+          { params }
+        );
+        setProducts(res.data);
+      } catch (err) {
+        console.error("Failed to fetch filtered products", err);
+      }
+    };
+
+    fetchFilteredProducts();
+  }, [selectedFilters]);
 
   const handleFilterChange = (key, value) => {
     setSelectedFilters((prev) => ({
@@ -67,37 +67,22 @@ const Filters = () => {
       category: "",
       priceRange: "",
       brand: "",
+      condition: "",
+      name: "",
+      minPrice: "",
+      maxPrice: "",
     });
   };
 
-  const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
-      const { category, priceRange, brand } = selectedFilters;
-
-      const matchesCategory = !category || product.category === category;
-      const matchesBrand =
-        !brand || product.brand.toLowerCase().includes(brand.toLowerCase());
-
-      let matchesPrice = true;
-      if (priceRange) {
-        const [min, max] = priceRange.split("-").map(Number);
-        matchesPrice = product.price >= min && product.price <= max;
-      }
-
-      return matchesCategory && matchesPrice && matchesBrand;
-    });
-  }, [selectedFilters]);
-
   return (
-    <div className="flex min-h-screen p-6 gap-6 bg-gray-100">
-      {/* Left Sidebar */}
-      <Card className="w-1/4 p-4">
+    <div className="flex flex-col lg:flex-row min-h-screen p-4 gap-6 bg-gray-100">
+      {/* Filters Section */}
+      <Card className="w-full lg:w-1/4 p-4">
         <CardBody className="space-y-6">
           <Typography variant="h5" color="blue-gray">
             Filters
           </Typography>
 
-          {/* Category */}
           <div>
             <Typography variant="small" className="mb-1">
               Category
@@ -108,72 +93,96 @@ const Filters = () => {
               onChange={(val) => handleFilterChange("category", val)}
             >
               <Option value="">All</Option>
-              <Option value="electronics">Electronics</Option>
-              <Option value="clothes">Clothes</Option>
+              <Option value="Electronics">Electronics</Option>
+              <Option value="Clothing">Clothing</Option>
               <Option value="books">Books</Option>
             </Select>
           </div>
 
-          {/* Price Range */}
           <div>
             <Typography variant="small" className="mb-1">
               Price Range
             </Typography>
+            <div className="flex flex-col gap-2">
+              <Input
+                label="Min Price"
+                type="number"
+                value={selectedFilters.minPrice || ""}
+                onChange={(e) => handleFilterChange("minPrice", e.target.value)}
+              />
+              <Input
+                label="Max Price"
+                type="number"
+                value={selectedFilters.maxPrice || ""}
+                onChange={(e) => handleFilterChange("maxPrice", e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Typography variant="small" className="mb-1">
+              Condition
+            </Typography>
             <Select
-              label="Select price range"
-              value={selectedFilters.priceRange}
-              onChange={(val) => handleFilterChange("priceRange", val)}
+              label="Select condition"
+              value={selectedFilters.condition}
+              onChange={(val) => handleFilterChange("condition", val)}
             >
               <Option value="">All</Option>
-              <Option value="0-50">$0 - $50</Option>
-              <Option value="51-100">$51 - $100</Option>
-              <Option value="101-200">$101 - $200</Option>
+              <Option value="new">New</Option>
+              <Option value="used">Used</Option>
             </Select>
           </div>
 
-          {/* Brand */}
           <div>
             <Typography variant="small" className="mb-1">
-              Brand
+              Product Name
             </Typography>
             <Input
-              label="Enter brand"
-              value={selectedFilters.brand}
-              onChange={(e) => handleFilterChange("brand", e.target.value)}
+              label="Enter product name"
+              value={selectedFilters.name || ""}
+              onChange={(e) => handleFilterChange("name", e.target.value)}
             />
           </div>
 
-          {/* Clear Button */}
           <Button color="red" fullWidth onClick={clearFilters} className="mt-2">
             Clear All
           </Button>
         </CardBody>
       </Card>
 
-      {/* Right Content */}
-      <Card className="w-3/4 p-6">
+      {/* Product Section */}
+      <Card className="w-full lg:w-3/4 p-4">
         <CardBody>
           <Typography variant="h5" color="blue-gray" className="mb-4">
             Selected Filters
           </Typography>
-          <ul className="space-y-2 text-sm">
+          <ul className="space-y-2 text-sm mb-6">
             <li>Category: {selectedFilters.category || "All"}</li>
-            <li>Price Range: {selectedFilters.priceRange || "All"}</li>
-            <li>Brand: {selectedFilters.brand || "Any"}</li>
+            <li>
+              Price Range:{" "}
+              {selectedFilters.minPrice || selectedFilters.maxPrice
+                ? `${selectedFilters.minPrice || 0} - ${
+                    selectedFilters.maxPrice || "∞"
+                  }`
+                : "All"}
+            </li>
+            <li>Condition: {selectedFilters.condition || "Any"}</li>
+            <li>Product Name: {selectedFilters.name || "Any"}</li>
           </ul>
-        </CardBody>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProducts.length > 0 ? (
-            filteredProducts.map((product, index) => (
-              <ProductCard key={index} index={index} product={product} />
-            ))
-          ) : (
-            <Typography variant="h6" color="gray">
-              No products match the selected filters.
-            </Typography>
-          )}
-        </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {products.length > 0 ? (
+              products.map((product, index) => (
+                <ProductCard key={index} index={index} product={product} />
+              ))
+            ) : (
+              <Typography variant="h6" color="gray">
+                No products match the selected filters.
+              </Typography>
+            )}
+          </div>
+        </CardBody>
       </Card>
     </div>
   );

@@ -1,6 +1,6 @@
 import React from "react";
 import { Typography, IconButton } from "@material-tailwind/react";
-import { Facebook } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
@@ -23,77 +23,29 @@ const Footer = () => {
           </Typography>
           <ul className="space-y-2">
             <li>
-              <a href="#" className="text-blue-gray-200 hover:text-white">
+              <Link to={"/"} className="text-blue-gray-200 hover:text-white">
                 Home
-              </a>
+              </Link>
             </li>
+
             <li>
-              <a href="#" className="text-blue-gray-200 hover:text-white">
-                Shop
-              </a>
-            </li>
-            <li>
-              <a href="#" className="text-blue-gray-200 hover:text-white">
+              <Link
+                to={"/about"}
+                className="text-blue-gray-200 hover:text-white"
+              >
                 About
-              </a>
+              </Link>
             </li>
-            <li>
-              <a href="#" className="text-blue-gray-200 hover:text-white">
+            {/* <li>
+              <Link
+                to={"/contactus"}
+                className="text-blue-gray-200 hover:text-white"
+              >
                 Contact
-              </a>
-            </li>
+              </Link>
+            </li> */}
           </ul>
         </div>
-
-        {/* Help */}
-        <div>
-          <Typography variant="h6" className="text-white mb-3">
-            Help
-          </Typography>
-          <ul className="space-y-2">
-            <li>
-              <a href="#" className="text-blue-gray-200 hover:text-white">
-                FAQs
-              </a>
-            </li>
-            <li>
-              <a href="#" className="text-blue-gray-200 hover:text-white">
-                Shipping
-              </a>
-            </li>
-            <li>
-              <a href="#" className="text-blue-gray-200 hover:text-white">
-                Returns
-              </a>
-            </li>
-            <li>
-              <a href="#" className="text-blue-gray-200 hover:text-white">
-                Support
-              </a>
-            </li>
-          </ul>
-        </div>
-
-        {/* Social Media */}
-        {/* <div>
-          <Typography variant="h6" className="text-white mb-3">
-            Follow Us
-          </Typography>
-          <div className="flex gap-3">
-            <IconButton color="black">
-              <Facebook />
-            </IconButton>
-            <IconButton variant="text" color="white">
-              <i className="fab fa-twitter" />
-            </IconButton>
-            <IconButton variant="text" color="white">
-              <i className="fab fa-instagram" />
-            </IconButton>
-            <IconButton variant="text" color="white">
-              <i className="fab fa-linkedin-in" />
-            </IconButton>
-          </div>
-        </div> */}
       </div>
 
       {/* Bottom Footer */}
